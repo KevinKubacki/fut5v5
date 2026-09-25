@@ -2820,18 +2820,20 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
   $("#propCam").addEventListener("change",onPropFile); $("#propGal").addEventListener("change",onPropFile);
   $("#propBar").addEventListener("click",async()=>{
     toast("Chargement des photos…");
-    let list; try{ list=await api("listProposals",ADMIN.code); }catch(err){ toast("Chargement impossible : "+errMsg(err)); return; }
+    let list; try{ list=await api("listProposals",ADMIN.code); }catch(err){ toast("Liste des photos impossible à charger : "+errMsg(err)); return; }
     PENDING=list.length; renderPropBar();
     if(!list.length){ toast("Aucune photo en attente."); return; }
     openSheet("Photos proposées","Valide pour remplacer la photo de la carte, ou refuse.",body=>{
       list.forEach(x=>{
         const row=document.createElement("div"); row.className="prop-row";
         row.innerHTML='<img alt="Photo proposée"><div><b></b><small></small><div class="prop-acts"><button type="button" class="prop-ok">Valider</button><button type="button" class="prop-no">Refuser</button></div></div>';
-        row.querySelector("img").src=x.photo||""; row.querySelector("b").textContent=x.name;
+        const img=row.querySelector("img"); row.querySelector("b").textContent=x.name;
+        api("getPhotos",[x.photoId]).then(r=>{ x.photo=r[x.photoId]; if(x.photo)img.src=x.photo; else img.alt="Photo introuvable"; })
+          .catch(err=>{ img.alt="Photo non chargée"; toast("Photo non chargée : "+errMsg(err)); });
         row.querySelector("small").textContent="Envoyée le "+new Date(x.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
         const act=async ok=>{ row.querySelectorAll("button").forEach(b=>b.disabled=true);
           try{ const r=await api("reviewProposal",ADMIN.code,x.id,ok);
-            if(ok){ const p=byId(r.playerId); if(p){ p.photoId=r.photoId; p.photo=x.photo; p.zoom=1; p.ox=0; p.oy=0; try{localStorage.setItem("ph:"+r.photoId,x.photo)}catch(e){} } }
+            if(ok){ const p=byId(r.playerId); if(p){ p.photoId=r.photoId; p.zoom=1; p.ox=0; p.oy=0; if(x.photo){ p.photo=x.photo; try{localStorage.setItem("ph:"+r.photoId,x.photo)}catch(e){} } } }
             PENDING_IDS=PENDING_IDS.filter(i=>i!==x.playerId);
             row.remove(); PENDING=Math.max(0,PENDING-1); renderPropBar(); refreshView();
             toast(ok?"Photo validée. Ajuste le cadrage si besoin dans Créer une carte FUT.":"Photo refusée.");
