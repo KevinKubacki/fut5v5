@@ -496,6 +496,34 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
 .ib-go{border:0;background:var(--gold);color:#0c1a3d;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer}
 .ib-no{border:1px solid var(--tile-line);background:transparent;color:var(--ink);border-radius:10px;padding:9px 14px;cursor:pointer}
 
+/* ---------- « C'est moi » ---------- */
+.mecard{background:var(--tile);border:1px solid var(--gold);border-radius:18px;padding:12px;margin:0 0 14px}
+.me-main{display:flex;align-items:center;gap:14px;width:100%;border:0;background:none;color:var(--ink);text-align:left;cursor:pointer;padding:0}
+.me-main canvas{width:92px;height:auto;flex:none}
+.me-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.me-txt small{color:var(--gold-deep);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.me-txt b{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:1.7rem;line-height:1}
+.me-stats{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:.88rem}
+.me-stats span{display:inline-flex;align-items:center;gap:4px}
+.me-stats b{font-family:inherit;font-size:.95rem;color:var(--ink)}
+.me-stats .ic{width:15px;height:15px}
+.me-link{color:var(--gold-deep);font-weight:700;font-size:.88rem;margin-top:2px}
+.me-news{border-bottom:1px solid var(--tile-line);padding:0 0 12px;margin:0 0 12px}
+.me-news h3{margin:0 0 6px;font-size:1rem}
+.me-news ul{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:4px}
+.me-news li{display:flex;align-items:center;gap:8px;font-size:.92rem}
+.me-news .up{color:#22c55e;font-weight:700}.me-news .down{color:#ff5a5a;font-weight:700}
+.me-news button{border:0;background:var(--gold);color:#0c1a3d;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}
+.me-hint{color:var(--muted);font-size:.82rem;margin:-4px 0 14px}
+.me-team{margin:-6px 0 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+.me-team .jsy{width:22px;height:22px;margin:0}
+.me-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.me-set{border:1px solid var(--gold);background:transparent;color:var(--gold);border-radius:999px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:.88rem}
+.me-set.on{background:var(--gold);color:#0c1a3d;cursor:default}
+.me-unset{border:0;background:none;color:#a9a3c0;text-decoration:underline;cursor:pointer;font-size:.82rem;padding:7px 4px}
+.cg.me canvas{outline:3px solid var(--gold);outline-offset:3px;border-radius:10px}
+.cg .metag{background:var(--gold);color:#0c1a3d;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:800;font-family:'Barlow',sans-serif}
+
 /* ---------- mode clair ---------- */
 :root[data-theme="light"]{
   --bg:#eef2fa; --ink:#0c1a3d; --muted:#5a6a90; --tile:#ffffff; --tile-line:#d6ddee;
@@ -536,10 +564,20 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
       <div class="ib-actions"><button type="button" class="ib-go" id="installGo">Installer</button><button type="button" class="ib-no" id="installNo" aria-label="Masquer">Plus tard</button></div>
     </div>
 
+    <div class="mecard" id="meCard" hidden>
+      <div class="me-news" id="meNews" hidden></div>
+      <button type="button" class="me-main" id="meOpen">
+        <canvas id="meCv" role="img" aria-label="Ma carte"></canvas>
+        <span class="me-txt"><small>Ma carte</small><b id="meName"></b><span class="me-stats" id="meStats"></span><span class="me-link">Voir ma fiche ›</span></span>
+      </button>
+    </div>
+    <p class="me-hint" id="meHint" hidden>Astuce : ouvre ta fiche dans Statistiques et touche « C'est moi » pour retrouver ta carte ici.</p>
+
     <div class="next" id="nextCard" hidden>
       <div class="next-top"><strong>Prochain match</strong><span id="nextCount"></span></div>
       <p class="when" id="nextWhen"></p>
       <p class="info" id="nextInfo"></p>
+      <p class="me-team" id="nextMe" hidden></p>
       <div class="next-actions">
         <button type="button" class="see" id="nextSee">Voir la compo</button>
         <button type="button" class="go admin-only" id="nextLive"><i></i><span id="nextLiveLabel">Live Score</span></button>
@@ -795,7 +833,8 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
       </div>
       <div class="pid">
         <canvas id="pCard" role="img" aria-label="Carte du joueur"></canvas>
-        <div><h2 id="pName"></h2><div class="ov" id="pOv"></div><div class="sub" id="pSub"></div></div>
+        <div><h2 id="pName"></h2><div class="ov" id="pOv"></div><div class="sub" id="pSub"></div>
+          <div class="me-btns"><button type="button" class="me-set" id="pMe">C'est moi</button><button type="button" class="me-unset" id="pNotMe" hidden>Ce n'est pas moi</button></div></div>
       </div>
       <div class="ptabs" role="tablist">
         <button type="button" role="tab" data-tab="details" aria-selected="true">Détails</button>
@@ -1995,11 +2034,17 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
       $("#nextInfo").textContent=a&&b?"Équipes prêtes : BLANC "+fmt1(a.ov)+", COULEURS "+fmt1(b.ov)+" ("+verdict(a,b).label.toLowerCase()+")":"Équipes à compléter";
       $("#nextLiveLabel").textContent="Live Score";
     }
+    const me=myId(), nm=$("#nextMe");
+    if(!me){nm.hidden=true;}
+    else if(!M.present.has(me)){nm.hidden=false; nm.textContent="Tu n'es pas dans la liste pour ce match.";}
+    else { const t=M.team[me]; nm.hidden=false;
+      nm.innerHTML=t==="rouge"?JSY_R+"Tu joues en COULEURS":t==="blanc"?JSY_W+"Tu joues en BLANC":"Tu es dans la liste des joueurs."; }
   }
   $("#nextLive").addEventListener("click",()=>{ location.hash="match"; setTimeout(openLive,50); });
 
   /* ================= ACCUEIL : dernier match ================= */
   function renderHome(){
+    renderMe(); renderNext();
     const m=matches[0]; $("#lastBtn").hidden=!m; if(!m)return;
     const sb=m.goals.filter(g=>g.side==="blanc").length, sr=m.goals.filter(g=>g.side==="rouge").length;
     const d=m.date.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
@@ -2224,11 +2269,12 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
     const grid=$("#cgrid"); grid.innerHTML="";
     if(!rows.length){grid.innerHTML='<p class="share-msg" style="color:#cfd8ee;grid-column:1/-1">Aucun joueur ne correspond.</p>';return}
     rows.forEach(({p,s})=>{
-      const b=document.createElement("button"); b.type="button"; b.className="cg"; b.dataset.go="p-"+p.id;
+      const b=document.createElement("button"); b.type="button"; b.className="cg"+(p.id===myId()?" me":""); b.dataset.go="p-"+p.id;
       b.setAttribute("aria-label",p.name+", note "+overall(p));
       const cv=document.createElement("canvas"); drawCard(cv,p,.42); b.appendChild(cv);
       const m=document.createElement("span"); m.className="m";
       m.innerHTML=SG.sort==="buts"?IC_BALL+s.g:SG.sort==="passes"?IC_BOOT+s.a:SG.sort==="mvp"?IC_STAR+s.mvp:SG.sort==="matchs"?s.mp+" match"+(s.mp>1?"s":""):"";
+      if(p.id===myId()){ const t=document.createElement("span"); t.className="metag"; t.textContent="Moi"; m.prepend(t); }
       b.appendChild(m); grid.appendChild(b);
     });
   }
@@ -2247,6 +2293,8 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
     $("#pName").textContent=p.name;
     $("#pOv").innerHTML='Note <b>'+overall(p)+'</b>'+(p.forme?arrowSVG(p.forme):"");
     const s=pstats(id,inSeason(CUR_SEASON));
+    const mine=myId()===id;
+    $("#pMe").textContent=mine?"✓ C'est moi":"C'est moi"; $("#pMe").classList.toggle("on",mine); $("#pNotMe").hidden=!mine;
     $("#pSub").textContent="Saison "+seasonLabel(CUR_SEASON)+" : "+s.mp+" match"+(s.mp>1?"s":"")+", "+s.g+" but"+(s.g>1?"s":"")+", "+s.a+" passe"+(s.a>1?"s":"")+" déc.";
     renderPlayerBody(); return true;
   }
@@ -2659,6 +2707,53 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
   }
   let rvTimer=null;
   function refreshView(){ clearTimeout(rvTimer); rvTimer=setTimeout(()=>{ renderHome(); const r=location.hash.slice(1); if(r&&r!=="carte")show(r); else if(r==="carte")render(); },120); }
+
+  /* ================= « C'EST MOI » ================= */
+  const ME_KEY="fut5v5:me", SEEN_KEY="fut5v5:me-vu";
+  const myId=()=>{ let id=null; try{id=localStorage.getItem(ME_KEY)}catch(e){} return id&&byId(id)?id:null; };
+  const snapshot=p=>({stats:Object.assign({},p.stats),mvp:matches.filter(m=>m.mvp===p.id).map(m=>m.id)});
+  function saveSeen(p){ try{localStorage.setItem(SEEN_KEY,JSON.stringify(Object.assign({id:p.id},snapshot(p))))}catch(e){} }
+  function newsFor(p){
+    let seen=null; try{seen=JSON.parse(localStorage.getItem(SEEN_KEY)||"null")}catch(e){}
+    if(!seen||seen.id!==p.id){ saveSeen(p); return null; }
+    const changes=STATS.map(([k,code])=>({code,a:clamp(seen.stats[k]),b:clamp(p.stats[k])})).filter(x=>x.a!==x.b);
+    const newMvp=matches.filter(m=>m.mvp===p.id&&!(seen.mvp||[]).includes(m.id));
+    if(!changes.length&&!newMvp.length)return null;
+    const ovA=Math.round(STATS.reduce((t,[k])=>t+clamp(seen.stats[k]),0)/STATS.length), ovB=overall(p);
+    return {changes,newMvp,ovA,ovB};
+  }
+  function renderMe(){
+    const id=myId(), box=$("#meCard");
+    $("#meHint").hidden=!!id||!roster.length;
+    box.hidden=!id; if(!id)return;
+    const p=byId(id), s=pstats(id,inSeason(CUR_SEASON));
+    drawCard($("#meCv"),p,.34); $("#meName").textContent=p.name;
+    $("#meStats").innerHTML='<span><b>'+s.mp+'</b>match'+(s.mp>1?"s":"")+'</span><span>'+IC_BALL+'<b>'+s.g+'</b></span><span>'+IC_BOOT+'<b>'+s.a+'</b></span><span>'+IC_STAR+'<b>'+s.mvp+'</b></span>';
+    const n=newsFor(p), nb=$("#meNews");
+    if(!n){nb.hidden=true;return;}
+    const esc=t=>String(t).replace(/</g,"&lt;");
+    let h="";
+    if(n.changes.length){
+      h+='<h3>Tes notes ont évolué</h3><ul>'+n.changes.map(x=>'<li>'+arrowSVG(x.b>x.a?1:-1)+'<span>'+x.code+' : '+x.a+' → <span class="'+(x.b>x.a?"up":"down")+'">'+x.b+'</span></span></li>').join("")+
+        (n.ovA!==n.ovB?'<li><b>Note générale : '+n.ovA+' → <span class="'+(n.ovB>n.ovA?"up":"down")+'">'+n.ovB+'</span></b></li>':'')+'</ul>';
+    }
+    if(n.newMvp.length){
+      h+='<h3>'+IC_STAR+' Élu MVP</h3><ul>'+n.newMvp.map(m=>'<li>Match du '+esc(dShort(m.date).toLowerCase())+' : BLANC '+sc(m,"blanc")+' – '+sc(m,"rouge")+' COULEURS</li>').join("")+'</ul>';
+    }
+    nb.innerHTML=h+'<button type="button" id="meSeen">J\'ai vu</button>'; nb.hidden=false;
+    $("#meSeen").addEventListener("click",()=>{ saveSeen(p); nb.hidden=true; });
+  }
+  $("#meOpen").addEventListener("click",()=>{ const id=myId(); if(id)location.hash="p-"+id; });
+  $("#pMe").addEventListener("click",()=>{
+    const p=byId(PV.id); if(!p||myId()===p.id)return;
+    try{localStorage.setItem(ME_KEY,p.id)}catch(e){}
+    saveSeen(p); renderPlayer(p.id); renderHome();
+    toast("C'est noté : ta carte apparaît maintenant sur l'accueil.");
+  });
+  $("#pNotMe").addEventListener("click",()=>{
+    try{localStorage.removeItem(ME_KEY);localStorage.removeItem(SEEN_KEY)}catch(e){}
+    renderPlayer(PV.id); renderHome(); toast("Carte retirée de l'accueil.");
+  });
 
   /* --- chargement initial --- */
   async function boot(){
