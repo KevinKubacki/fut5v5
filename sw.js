@@ -1,5 +1,5 @@
 /* FUT 5V5 : service worker (installation, ouverture hors connexion, mises à jour) */
-const VERSION = 'fut5v5-2026-09-25-1';
+const VERSION = 'fut5v5-2026-09-25-2';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 
@@ -23,7 +23,8 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return; /* le script Google n'est jamais mis en cache */
   /* page et réglages : réseau d'abord (pour recevoir les mises à jour), sinon la copie gardée */
   if (req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/config.js')) {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return r; })
+    /* no-store : on contourne le cache du navigateur pour voir tout de suite une mise à jour */
+    e.respondWith(fetch(req.url, { cache: 'no-store', credentials: 'same-origin' }).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return r; })
       .catch(() => caches.match(req).then(hit => hit || caches.match('./index.html'))));
     return;
   }
