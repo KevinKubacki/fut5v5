@@ -524,6 +524,25 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
 .cg.me canvas{outline:3px solid var(--gold);outline-offset:3px;border-radius:10px}
 .cg .metag{background:var(--gold);color:#0c1a3d;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:800;font-family:'Barlow',sans-serif}
 
+/* ---------- photos proposées ---------- */
+.me-wait{color:#e9c76a;font-size:.82rem;margin:8px 0 0}
+.propbar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--gold);background:var(--tile);color:var(--ink);border-radius:14px;padding:12px 14px;margin:0 0 14px;cursor:pointer;font-weight:600}
+.propbar .pb-ic{width:34px;height:34px;border-radius:50%;background:var(--gold);color:#0c1a3d;display:grid;place-items:center;flex:none}
+.propbar .pb-ic svg{width:20px;height:20px}
+.propbar .pb-go{margin-left:auto;color:var(--gold-deep);font-weight:700}
+.prop-preview{display:block;max-width:220px;width:100%;margin:0 auto 14px;border-radius:14px}
+.prop-row{display:grid;grid-template-columns:78px 1fr;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--tile-line)}
+.prop-row:last-child{border-bottom:0}
+.prop-row img{width:78px;height:98px;object-fit:cover;border-radius:10px;display:block}
+.prop-row b{display:block;font-size:1.05rem}
+.prop-row small{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 8px}
+.prop-acts{display:flex;gap:8px}
+.prop-acts button{border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}
+.prop-ok{border:0;background:#16a34a;color:#fff}
+.prop-no{border:1px solid var(--tile-line);background:transparent;color:var(--ink)}
+.prop-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 6px}
+.prop-choice button{border:1px solid var(--tile-line);background:var(--bg);color:var(--ink);border-radius:12px;padding:14px 8px;font-weight:700;cursor:pointer}
+
 /* ---------- mode clair ---------- */
 :root[data-theme="light"]{
   --bg:#eef2fa; --ink:#0c1a3d; --muted:#5a6a90; --tile:#ffffff; --tile-line:#d6ddee;
@@ -571,6 +590,9 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
         <span class="me-txt"><small>Ma carte</small><b id="meName"></b><span class="me-stats" id="meStats"></span><span class="me-link">Voir ma fiche ›</span></span>
       </button>
     </div>
+    <button type="button" class="propbar admin-only" id="propBar" hidden><span class="pb-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/></svg></span><span id="propBarTxt"></span><span class="pb-go">Voir ›</span></button>
+    <input type="file" accept="image/*" capture="user" id="propCam" hidden>
+    <input type="file" accept="image/*" id="propGal" hidden>
     <p class="me-hint" id="meHint" hidden>Astuce : ouvre ta fiche dans Statistiques et touche « C'est moi » pour retrouver ta carte ici.</p>
 
     <div class="next" id="nextCard" hidden>
@@ -834,7 +856,8 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
       <div class="pid">
         <canvas id="pCard" role="img" aria-label="Carte du joueur"></canvas>
         <div><h2 id="pName"></h2><div class="ov" id="pOv"></div><div class="sub" id="pSub"></div>
-          <div class="me-btns"><button type="button" class="me-set" id="pMe">C'est moi</button><button type="button" class="me-unset" id="pNotMe" hidden>Ce n'est pas moi</button></div></div>
+          <div class="me-btns"><button type="button" class="me-set" id="pMe">C'est moi</button><button type="button" class="me-set" id="pPropose" hidden>Proposer ma photo</button><button type="button" class="me-unset" id="pNotMe" hidden>Ce n'est pas moi</button></div>
+          <p class="me-wait" id="pWait" hidden>Photo envoyée : en attente de validation par un organisateur.</p></div>
       </div>
       <div class="ptabs" role="tablist">
         <button type="button" role="tab" data-tab="details" aria-selected="true">Détails</button>
@@ -2044,6 +2067,7 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
 
   /* ================= ACCUEIL : dernier match ================= */
   function renderHome(){
+    renderPropBar();
     renderMe(); renderNext();
     const m=matches[0]; $("#lastBtn").hidden=!m; if(!m)return;
     const sb=m.goals.filter(g=>g.side==="blanc").length, sr=m.goals.filter(g=>g.side==="rouge").length;
@@ -2295,6 +2319,9 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
     const s=pstats(id,inSeason(CUR_SEASON));
     const mine=myId()===id;
     $("#pMe").textContent=mine?"✓ C'est moi":"C'est moi"; $("#pMe").classList.toggle("on",mine); $("#pNotMe").hidden=!mine;
+    $("#pPropose").hidden=!mine||isAdmin();
+    const waiting=PENDING_IDS.includes(id);
+    $("#pWait").hidden=!(mine&&waiting&&!isAdmin());
     $("#pSub").textContent="Saison "+seasonLabel(CUR_SEASON)+" : "+s.mp+" match"+(s.mp>1?"s":"")+", "+s.g+" but"+(s.g>1?"s":"")+", "+s.a+" passe"+(s.a>1?"s":"")+" déc.";
     renderPlayerBody(); return true;
   }
@@ -2755,6 +2782,68 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
     renderPlayer(PV.id); renderHome(); toast("Carte retirée de l'accueil.");
   });
 
+  /* ================= PHOTOS PROPOSÉES PAR LES JOUEURS ================= */
+  let PENDING=0, PENDING_IDS=[];
+  function renderPropBar(){
+    const b=$("#propBar"); b.hidden=!(isAdmin()&&PENDING>0); if(b.hidden)return;
+    $("#propBarTxt").textContent=PENDING+" photo"+(PENDING>1?"s":"")+" proposée"+(PENDING>1?"s":"")+" par les joueurs";
+  }
+  function fileToSmall(file){
+    return new Promise((res,rej)=>{ const u=URL.createObjectURL(file), im=new Image();
+      im.onload=()=>{ const k=Math.min(1,480/Math.max(im.naturalWidth,im.naturalHeight)), cv=document.createElement("canvas");
+        cv.width=Math.round(im.naturalWidth*k); cv.height=Math.round(im.naturalHeight*k); cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+        URL.revokeObjectURL(u); res(hasAlpha(cv)?cv.toDataURL("image/png"):cv.toDataURL("image/jpeg",.82)); };
+      im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("image illisible"))}; im.src=u; });
+  }
+  $("#pPropose").addEventListener("click",()=>{
+    openSheet("Proposer ma photo","Un organisateur la validera avant qu'elle apparaisse sur ta carte. Il pourra ensuite ajuster le cadrage.",body=>{
+      const c=document.createElement("div"); c.className="prop-choice";
+      c.innerHTML='<button type="button" data-src="propCam">Prendre une photo</button><button type="button" data-src="propGal">Galerie</button>';
+      c.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ const i=$("#"+b.dataset.src); i.value=""; i.click(); }));
+      body.appendChild(c);
+    });
+  });
+  async function onPropFile(e){
+    const f=e.target.files&&e.target.files[0]; if(!f)return;
+    let url; try{ url=await fileToSmall(f); }catch(err){ toast("Impossible de lire cette image."); return; }
+    const p=byId(PV.id); if(!p)return;
+    openSheet("Envoyer cette photo ?","Pour la carte de "+p.name,body=>{
+      const im=document.createElement("img"); im.className="prop-preview"; im.src=url; im.alt="Photo proposée"; body.appendChild(im);
+      const b=document.createElement("button"); b.type="button"; b.className="danger-fill okfill"; b.textContent="Envoyer";
+      b.addEventListener("click",async()=>{ b.disabled=true; b.textContent="Envoi…";
+        try{ await api("proposePhoto",p.id,url); if(!PENDING_IDS.includes(p.id))PENDING_IDS.push(p.id);
+          closeSheet(); renderPlayer(p.id); toast("Photo envoyée : un organisateur va la valider."); }
+        catch(err){ b.disabled=false; b.textContent="Envoyer"; toast("Envoi impossible : "+errMsg(err)); } });
+      body.appendChild(b);
+    });
+  }
+  $("#propCam").addEventListener("change",onPropFile); $("#propGal").addEventListener("change",onPropFile);
+  $("#propBar").addEventListener("click",async()=>{
+    toast("Chargement des photos…");
+    let list; try{ list=await api("listProposals",ADMIN.code); }catch(err){ toast("Chargement impossible : "+errMsg(err)); return; }
+    PENDING=list.length; renderPropBar();
+    if(!list.length){ toast("Aucune photo en attente."); return; }
+    openSheet("Photos proposées","Valide pour remplacer la photo de la carte, ou refuse.",body=>{
+      list.forEach(x=>{
+        const row=document.createElement("div"); row.className="prop-row";
+        row.innerHTML='<img alt="Photo proposée"><div><b></b><small></small><div class="prop-acts"><button type="button" class="prop-ok">Valider</button><button type="button" class="prop-no">Refuser</button></div></div>';
+        row.querySelector("img").src=x.photo||""; row.querySelector("b").textContent=x.name;
+        row.querySelector("small").textContent="Envoyée le "+new Date(x.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+        const act=async ok=>{ row.querySelectorAll("button").forEach(b=>b.disabled=true);
+          try{ const r=await api("reviewProposal",ADMIN.code,x.id,ok);
+            if(ok){ const p=byId(r.playerId); if(p){ p.photoId=r.photoId; p.photo=x.photo; p.zoom=1; p.ox=0; p.oy=0; try{localStorage.setItem("ph:"+r.photoId,x.photo)}catch(e){} } }
+            PENDING_IDS=PENDING_IDS.filter(i=>i!==x.playerId);
+            row.remove(); PENDING=Math.max(0,PENDING-1); renderPropBar(); refreshView();
+            toast(ok?"Photo validée. Ajuste le cadrage si besoin dans Créer une carte FUT.":"Photo refusée.");
+            if(!body.querySelector(".prop-row"))closeSheet();
+          }catch(err){ row.querySelectorAll("button").forEach(b=>b.disabled=false); toast(errMsg(err)); } };
+        row.querySelector(".prop-ok").addEventListener("click",()=>act(true));
+        row.querySelector(".prop-no").addEventListener("click",()=>act(false));
+        body.appendChild(row);
+      });
+    });
+  });
+
   /* --- chargement initial --- */
   async function boot(){
     try{
@@ -2763,6 +2852,7 @@ body.viewer .act[data-go=historique]{grid-column:1/-1;min-height:0;flex-directio
       catch(err){ const c=(()=>{try{return JSON.parse(localStorage.getItem("fut5v5:data")||"null")}catch(e){return null}})(); if(!c)throw err; data=c; setTimeout(()=>toast("Hors connexion : dernières données enregistrées sur ce téléphone."),800); }
       roster.splice(0,roster.length,...data.players.map(p=>Object.assign(p,{photo:null})));
       matches.splice(0,matches.length,...data.matches.map(m=>Object.assign(m,{date:new Date(m.date)})));
+      PENDING=data.pending||0; PENDING_IDS=data.pendingPlayers||[];
       let local=null; try{local=JSON.parse(localStorage.getItem(SAVE_KEY)||"null")}catch(e){}
       const src=(local&&local.pending&&(!data.planned||data.planned.id===local.id))?local:(data.planned?{
         id:data.planned.id,present:data.planned.present,team:data.planned.team,layout:data.planned.layout,made:true,goals:data.planned.goals,start:data.planned.start,
